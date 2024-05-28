@@ -19,6 +19,7 @@ func (cli *CLI) Run() {
 	listAddressesCmd := flag.NewFlagSet("listaddresses", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
+	connectCmd := flag.NewFlagSet("connect", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
@@ -54,6 +55,11 @@ func (cli *CLI) Run() {
 		}
 	case "printchain":
 		err := printChainCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "connect":
+		err := connectCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -98,6 +104,10 @@ func (cli *CLI) Run() {
 	if printChainCmd.Parsed() {
 		cli.printChain()
 	}
+
+	if connectCmd.Parsed() {
+		cli.peerConnect()
+	}
 }
 
 func (cli *CLI) printUsage() {
@@ -109,6 +119,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  listaddresses - Lists all addresses from the wallet file")
 	fmt.Println("  printchain - Print all the blocks of the blockchain")
 	fmt.Println("  send -from FROM -to TO -amount AMOUNT - Send AMOUNT of coins from FROM address to TO")
+	fmt.Println("  connect - Connect to other peers in the network")
 }
 
 func (cli *CLI) validateArgs() {
