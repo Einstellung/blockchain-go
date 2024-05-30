@@ -106,7 +106,7 @@ func (cli *CLI) Run() {
 	}
 
 	if connectCmd.Parsed() {
-		cli.peerConnect()
+		// cli.peerConnect()
 	}
 }
 

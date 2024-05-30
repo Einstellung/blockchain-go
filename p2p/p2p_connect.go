@@ -1,16 +1,14 @@
-package cli
+package p2p
 
 import (
-	p2p "blockchain-go/p2p"
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
-func (cli *CLI) peerConnect() {
+func PeerConnect() {
 	ctx := context.Background()
 
 	// create a new libp2p Host that listens on a random TCP port
@@ -29,19 +27,24 @@ func (cli *CLI) peerConnect() {
 	}
 
 	// setup local mDNS discovery
-	if err := p2p.SetupDiscovery(h); err != nil {
+	if err := SetupDiscovery(h); err != nil {
 		panic(err)
 	}
 
 	// join the blockchain pub/sub network
-	bcommu, err := p2p.JoinBlockChain(ctx, ps, h.ID())
+	bcommu, err := JoinBlockChain(ctx, ps, h.ID())
 	if err != nil {
 		panic(err)
 	}
 
 	// draw the ui
 	ui := NewBlockchainUi(bcommu)
-	if err = ui.Run(); err != nil {
-		fmt.Println("error running text UI:", err)
-	}
+
+	go ui.readDataTerminal()
+	go ui.handleEvents()
+
+	defer ui.end()
+
+	// block main thread
+	select {}
 }

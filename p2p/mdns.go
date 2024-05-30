@@ -16,11 +16,15 @@ type discoveryNotifee struct {
 
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 	fmt.Println("discovered new peer", utils.ShortID(pi.ID))
-	err := n.h.Connect(context.Background(), pi)
-	if err != nil {
-		utils.PrintErr("error connecting to peer %s", utils.ShortID(pi.ID))
-		// utils.PrintErr("error: %s", err)
-	}
+		if pi.ID > n.h.ID() {
+			fmt.Println(utils.ShortID(pi.ID), " id is greater than us, wait for it to connect to us")
+		} else {
+			err := n.h.Connect(context.Background(), pi)
+			if err != nil {
+				fmt.Println("error connecting to peer", utils.ShortID(pi.ID), err)
+			}
+			fmt.Println("connected to peer", utils.ShortID(pi.ID))
+		}
 }
 
 func SetupDiscovery(h host.Host) error {
