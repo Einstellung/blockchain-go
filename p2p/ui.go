@@ -1,10 +1,12 @@
 package p2p
 
 import (
+	cli "blockchain-go/cmd/cli"
 	utils "blockchain-go/utils"
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type BlockchainUi struct {
@@ -18,6 +20,8 @@ func NewBlockchainUi(bcommu *BlockchainCommunication) *BlockchainUi {
 
 	// an input field for typing messages into
 	inputCh := make(chan string, 32)
+	
+	cli.PrintUsage()
 
 	return &BlockchainUi{
 		inputChan: inputCh,
@@ -32,11 +36,13 @@ func (ui *BlockchainUi) end() {
 }
 
 func (ui *BlockchainUi) handleEvents() {
+	cli := cli.CLI{}
 
 	for {
 		select {
 		// when the user types in a line, publish it to the blockchain network and print to the message window
 		case input := <-ui.inputChan:
+			cli.Run(input)
 			err := ui.bcommu.Publish(input)
 			if err != nil {
 				utils.PrintErr("publish error: %s", err)
@@ -54,18 +60,16 @@ func (ui *BlockchainUi) handleEvents() {
 }
 
 func (ui *BlockchainUi) displayPeerMessage(m BlockMessage) {
-	// prompt := utils.WithColor("green", fmt.Sprintf("<%s>:", utils.ShortID(m.SenderID)))
-	// fmt.Fprintln(ui.peerMsgBox, prompt, m.Message)
-	fmt.Println(m.Message)
+	utils.ColorPrint("green", fmt.Sprintf("<%s>: ", utils.ShortID(m.SenderID)), m.Message)
 }
 
-func (ui *BlockchainUi) displaySelfMessage(m string) {
-	// fmt.Fprintln(ui.peerMsgBox, "[self msg]:", m)
-	fmt.Println("[self msg]:", m)
+func (ui *BlockchainUi) displaySelfMessage(input string) {
+	utils.ColorPrint("yellow", "<self>: ", input)
+	fmt.Println()
 }
 
 
-// read data from terminal then send to input channel
+// read data from terminal input then send to input channel
 func (ui *BlockchainUi) readDataTerminal() {
 	stdReader := bufio.NewReader(os.Stdin)
 
@@ -77,33 +81,12 @@ func (ui *BlockchainUi) readDataTerminal() {
 			panic(err)
 		}
 
+		// Trim leading and trailing whitespace, including '\n' from the input string
+		sendData = strings.TrimSpace(sendData)
+
 		if sendData == "" {
 			return
 		}
 		ui.inputChan <- sendData
-	}
-}
-
-func writeData(rw *bufio.ReadWriter) {
-	stdReader := bufio.NewReader(os.Stdin)
-
-	for {
-		fmt.Print("> ")
-		sendData, err := stdReader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading from stdin")
-			panic(err)
-		}
-
-		_, err = rw.WriteString(fmt.Sprintf("%s\n", sendData))
-		if err != nil {
-			fmt.Println("Error writing to buffer")
-			panic(err)
-		}
-		err = rw.Flush()
-		if err != nil {
-			fmt.Println("Error flushing buffer")
-			panic(err)
-		}
 	}
 }
